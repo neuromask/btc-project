@@ -83,7 +83,16 @@ body, .navbar, #app {
     font-size: 2rem;
 }
 
-
+.cursmall {
+    font-size:.8rem;
+    color:grey;
+}
+.cursmall span {
+    font-weight: bold;
+}
+.cur-block{
+    line-height: 1rem;
+}
 .form-holder {
     max-width: 800px;
     margin: 1.75rem auto;
@@ -91,3 +100,34 @@ body, .navbar, #app {
     width: auto;
     pointer-events: none;
 }
+
+.jumbotron {
+    padding: 1rem!important;
+    margin: 0!important;
+}
+
+.modal-content {
+    border-radius: 0!important;
+}
+
+.dark-footer {
+    background: #444;
+}
+.dark-footer.navbar {
+    border-bottom: 0!important;
+    border-radius: initial;
+}
+
+.dark-footer .navbar-nav:last-child i {
+    margin-right:0!important;
+    padding-right:0!important;
+}
+.dark-footer .navbar-nav:first-child a,
+.dark-footer .navbar-nav:first-child li {
+    margin-left:0!important;
+    padding-left:0!important;
+}
+
+.btn-label {position: relative;left: -12px;display: inline-block;padding: 6px 12px;background: rgba(0,0,0,0.15);border-radius: 3px 0 0 3px;}
+.btn-labeled {padding-top: 0!important;padding-bottom: 0!important;}
+.btn { margin-bottom:10px; }
