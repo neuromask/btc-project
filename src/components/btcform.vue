@@ -83,7 +83,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-labeled btn-success" :disabled="status !== 'accepted'"><span class="btn-label"><i class="fas fa-check"></i></span>Sdelat' stavku</button>
             </div>
-
+            <p>{{ origin | json }}</p>
             <div>
                 <!-- As a link -->
                 <b-navbar type="dark" variant="dark" toggleable class="dark-footer">
@@ -126,6 +126,7 @@
         },
         data() {
             return {
+                origin: '',
                 status : 'not_accepted',
                 amount: '',
                 currency: null,
@@ -141,8 +142,21 @@
                     {text: '<i class="fas fa-arrow-down"></i> Vniz', value: 'second'}
                 ]
             }
+        },
+        ready: function() {
+
+            // GET request
+            this.$http.get('http://httpbin.org/ip', function (data) {
+                // set data on vm
+                this.$set('origin', data)
+
+            }).error(function (data, status, request) {
+                // handle error
+            })
+
         }
     }
+
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
