@@ -1,9 +1,7 @@
 <template>
 
     <div class="form-holder">
-        <!--    <div class="hello">
-              <h1>{{ msg }}</h1>
-            </div>-->
+
         <div class="modal-content text-left" v-if="modal == 'bidPlacing'">
             <div class="modal-header">
                 <h2 class="modal-title">Binarnyj opcion</h2>
@@ -17,8 +15,8 @@
                             <b-row>
                                 <b-col>
                                     <b-form-group label="Valjuta">
-                                        <b-form-select v-model="userCurrency" class="mb-3">
-                                            <option v-for="currency in currencies" :value="currency.code">{{ currency.symbol + " " + currency.code }}</option>
+                                        <b-form-select v-model="userCurrency" @change="getCurrentRate()" class="mb-3">
+                                            <option v-for="currency in currencies" v-bind:value="currency.code" v-html="currency.symbol + ' ' + currency.code">}</option>
                                         </b-form-select>
                                     </b-form-group>
                                 </b-col>
@@ -31,8 +29,8 @@
                             <b-row>
                                 <b-col>
                                     <b-form-group label="Posle sledujushej smeny kotirovok kurk bitcoina pojdet:">
-                                        <b-form-radio-group v-model="curdirection"
-                                                            :options="diroptions"
+                                        <b-form-radio-group v-model="userDirection"
+                                                            :options="dirOptions"
                                                             name="radioInline">
                                         </b-form-radio-group>
                                     </b-form-group>
@@ -53,137 +51,182 @@
                         <h5 class="mb-3">Tekushie indexy</h5>
                         <b-list-group>
                             <b-list-group-item v-for="currency in currencies">
-                                <div class="d-inline-block"><i class="fas fa-dollar-sign text-size-2"></i></div>
+                                <div class="d-inline-block"><span class="text-size-2 font-weight-bold" v-html="currency.symbol"></span></div>
                                 <div class="d-inline-block cur-block ml-2">
-                                    <div>USD</div>
+                                    <div>{{ currency.code }}</div>
                                     <div class="cursmall">Kurs: <span class="cur-usd">{{ currency.rate }}</span></div>
-                                </div>
-                            </b-list-group-item>
-                            <b-list-group-item>
-                                <div class="d-inline-block"><i class="fas fa-euro-sign text-size-2"></i></div>
-                                <div class="d-inline-block cur-block ml-2">
-                                    <div>EUR</div>
-                                    <div class="cursmall"><span class="cur-eur">123</span></div>
-                                </div>
-                            </b-list-group-item>
-                            <b-list-group-item>
-                                <div class="d-inline-block"><i class="fas fa-ruble-sign text-size-2"></i></div>
-                                <div class="d-inline-block cur-block ml-2">
-                                    <div>RUB</div>
-                                    <div class="cursmall"><span class="cur-rub">123</span></div>
                                 </div>
                             </b-list-group-item>
                         </b-list-group>
                         <div class="mt-3 text-right">
-                            <p>Po tekushemu kursu: <strong><span class="cur-info">0.123</span></strong></p>
+                            <p>Po tekushemu kursu: <strong><span class="cur-info">{{ userBidAmount }}</span><i class="fab fa-btc ml-1"></i></strong></p>
                         </div>
                     </b-col>
 
                 </b-row>
             </div>
+            <button type="button" @click="removeItem">Удалить</button>
             <div class="modal-footer">
-                <button type="button" class="btn btn-labeled btn-success" :disabled="status !== 'accepted'"><span class="btn-label"><i class="fas fa-check"></i></span>Sdelat' stavku</button>
+                <button type="button" class="btn btn-labeled btn-success" @click="winCheck()"><span
+                        class="btn-label"><i class="fas fa-check"></i></span>Sdelat' stavku
+                </button>
             </div>
-            <div>
-                <!-- As a link -->
-                <b-navbar type="dark" variant="dark" toggleable class="dark-footer">
-                    <b-navbar-toggle target="nav_dropdown_collapse"></b-navbar-toggle>
-                    <b-collapse is-nav id="nav_dropdown_collapse">
-                        <b-navbar-nav>
-                            <b-nav-item href="#">Home</b-nav-item>
-                            <b-nav-item href="#">Link</b-nav-item>
-                            <b-nav-item href="#">Home</b-nav-item>
-                            <b-nav-item href="#">Link</b-nav-item>
-                            <b-nav-item href="#">Home</b-nav-item>
-                            <b-nav-item href="#">Link</b-nav-item>
-                        </b-navbar-nav>
-                        <b-navbar-nav class="ml-auto">
-                            <b-navbar-brand href="#" class="mr-0">
-                                <i class="fab fa-facebook-square nav-link"></i>
-                            </b-navbar-brand>
-                            <b-navbar-brand href="#" class="mr-0">
-                                <i class="fab fa-vk nav-link"></i>
-                            </b-navbar-brand>
-                            <b-navbar-brand href="#" class="mr-0">
-                                <i class="fab fa-youtube-square nav-link"></i>
-                            </b-navbar-brand>
-                            <b-navbar-brand href="#" class="mr-0">
-                                <i class="fab fa-instagram nav-link"></i>
-                            </b-navbar-brand>
-                        </b-navbar-nav>
-                    </b-collapse>
-                </b-navbar>
-            </div>
+            <footerBar></footerBar>
         </div>
+        <div class="modal-content text-left" v-if="modal == 'bidWon'">
+            <div class="modal-header">
+                <h2 class="modal-title">Stavka vqjgrala</h2>
+            </div>
+            <div class="modal-body text-center">
+                <b-row>
+                    <b-col>
+                        <p>Pozdravljaem! Vasha stavka vqigrala.</p>
+                        <p>Summa vqjgrasha po obnovljonnomu kursu: <strong><span class="cur-info"></span>{{ userBidAmount }} BTC</strong></p>
+                    </b-col>
+                </b-row>
+                <b-button variant="outline-success" @click="bidRefresh()">Sdelat' stavku</b-button>
+            </div>
+            <footerBar></footerBar>
+        </div>
+        <div class="modal-content text-left" v-if="modal == 'bidLose'">
+            <div class="modal-header">
+                <h2 class="modal-title">Stavka proigrala</h2>
+            </div>
+            <div class="modal-body text-center">
+                <b-row>
+                    <b-col>
+                        <p>K sozhaleniju vasha stavka proigrala.</p>
+                        <p>Summa proigrqsha po obnovljonnomu kursu: <strong><span class="cur-info"></span>{{ userBidAmount }} BTC</strong></p>
+                    </b-col>
+                </b-row>
+                <b-button variant="outline-success" @click="bidRefresh()">Sdelat' stavku</b-button>
+            </div>
+            <footerBar></footerBar>
+        </div>
+
 
     </div>
 </template>
 
 <script>
-
-    var link = 'https://api.coindesk.com/v1/bpi/currentprice.json?t=123454';
-
+    import footerBar from './footerBar.vue';
     export default {
         name: 'btcform',
-        props: {
-            msg: String
+        components:{
+            footerBar
         },
         data() {
             return {
                 origin: null,
                 currencies: null,
                 oldCurrencies: null,
-
-                status : 'not_accepted',
+                link: 'https://api.coindesk.com/v1/bpi/currentprice.json?t=123454',
+                status: 'not_accepted',
+                currentRate: '',
+                bidStatus: 'bid_not_accepted',
+                dataStatus: 'not_changed',
                 modal: 'bidPlacing',
                 userAmount: '',
-                userCurrency: '',
-                curdirection: 'goesup',
-                diroptions: [
-                    {text: '<i class="fas fa-arrow-up"></i> Vverh', value: 'goesup'},
-                    {text: '<i class="fas fa-arrow-down"></i> Vniz', value: 'goesdown'}
+                userBidAmount:'',
+                userCurrency: 'EUR',
+                userDirection: 'up',
+                curDirection: '',
+                dirOptions: [
+                    {text: '<i class="fas fa-arrow-up"></i> Vverh', value: 'up'},
+                    {text: '<i class="fas fa-arrow-down"></i> Vniz', value: 'down'}
                 ]
             }
         },
-        created: function() {
+        created: function () {
             this.getResources();
             this.refreshResources();
         },
         methods: {
-            setStatus: function(status) {
-                this.status = status;
+            removeItem: function() {
+                // генерируем событие 'remove' и передаём id элемента
+                this.$emit('updateBalance', 'asd');
+                console.log('btn');
             },
-            getResources: function(){
-                this.$http.get(link).then(function(response){
+            balanceUpdate: function() {
+                this.$emit('updateBalance', 2);
+                console.log('asd');
+            },
+            setBidStatus: function (bidStatus) {
+                this.bidStatus = bidStatus;
+            },
+            setDataStatus: function (dataStatus) {
+                if (this.bidStatus === 'bid_accepted') {
+                    this.dataStatus = dataStatus;
+                }
+            },
+            setCurDirection: function (dataOld, dataNew) {
+                if (dataOld[this.userCurrency].rate > dataNew[this.userCurrency].rate) {
+                    this.curDirection = 'down';
+                } else {
+                    this.curDirection = 'up';
+                }
+                //console.log(dataOld[this.userCurrency].rate +' > '+ dataOld[this.userCurrency].rate, this.curDirection);
+            },
+            getBidAmount: function () {
+                var a = origin[this.userCurrency].rate;
+                a = a.replace(/\,/g,'');
+                a = parseInt(a,10);
+                a = this.userAmount/a;
+                a = a.toFixed(4);
+                this.userBidAmount = a;
+            },
+            getResources: function () {
+                this.$http.get(this.link).then(function (response) {
                     origin = response.data.bpi;
-
+                    this.getBidAmount();
                     // First fill with data
-                    if (this.currencies == null){
+                    if (this.currencies == null) {
                         this.currencies = origin;
                     }
-
                     // Check if data on remote was changed
-                    if (origin[Object.keys(origin)[0]].rate != this.currencies[Object.keys(origin)[0]].rate){
-                        console.log("changed");
-
+                    if (origin[Object.keys(origin)[0]].rate != this.currencies[Object.keys(origin)[0]].rate) {
+                        this.setDataStatus('changed');
+                        this.setCurDirection(this.currencies, origin);
                         this.oldCurrencies = this.currencies;
                         this.currencies = origin;
                     }
-                }, function(error){
+                }, function (error) {
                     console.log(error.statusText);
                 });
             },
             refreshResources: function () {
-                setInterval(()=>{
-                    this.getResources()
-                },1000);
+                this.intervalID1 = setInterval(() => {
+                    this.getResources();
+                    this.balanceUpdate();
+                }, 1000);
             },
             winCheck: function () {
-                setInterval(()=>{
-                    if (this.status === 'bid_accepted'){
-
+                this.setBidStatus('bid_accepted');
+                this.intervalID2 = setInterval(() => {
+                    console.log('winCheck '+ this.userDirection, this.curDirection, this.dataStatus);
+                    if (this.dataStatus == 'changed') {
+                        // Win / lose state
+                        if (this.userDirection == this.curDirection) {
+                            this.bidDestroy();
+                            this.modal = 'bidWon';
+                            this.balanceUpdate();
+                        } else {
+                            this.bidDestroy();
+                            this.modal = 'bidLose';
+                            this.balanceUpdate();
+                        }
                     }
-                },1000);
+                }, 1000);
+            },
+            bidDestroy() {
+                this.setDataStatus('not_changed');
+                this.setBidStatus('bid_not_accepted');
+                clearInterval(this.intervalID1);
+                clearInterval(this.intervalID2);
+            },
+            bidRefresh() {
+                this.modal = 'bidPlacing';
+                this.refreshResources();
             }
         }
     }

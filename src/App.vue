@@ -20,7 +20,9 @@
 
           <b-collapse class="mr-3" is-nav id="nav_text_collapse">
             <b-navbar-nav>
-              <b-nav-text class="text-left user-info"><span class="name white font-weight-bold">Innokenty F.</span> Schet: #345543235<br/>Dostupno sredstv <span class="balance white font-weight-bold">126</span></b-nav-text>
+              <b-nav-text class="text-left user-info"><span class="name white font-weight-bold">Innokenty F.</span> Schet: #345543235<br/>Dostupno sredstv
+                <span v-on:updateBalance="newBalance" class="balance white font-weight-bold">{{ balance }}</span>
+              </b-nav-text>
             </b-navbar-nav>
           </b-collapse>
 
@@ -35,7 +37,7 @@
 
     <!-- navbar-1.vue -->
 
-    <btcform msg="Welcome to Your Vue.js App"/>
+    <btcform><div v-on:updateBalance="newBalance">asd</div></btcform>
 
   </div>
 
@@ -49,6 +51,20 @@ export default {
   name: 'app',
   components: {
       btcform
+  },
+  data() {
+      return {
+          balance: '120',
+      }
+  },
+  methods: {
+      newBalance: function (balance) {
+          this.balance = '10';
+          console.log('bupd');
+      },
+      removeFromList() {
+          console.log('rem');
+      }
   }
 }
 </script>
