@@ -4,7 +4,7 @@
         <!--    <div class="hello">
               <h1>{{ msg }}</h1>
             </div>-->
-        <div class="modal-content text-left">
+        <div class="modal-content text-left" v-if="modal == 'bidPlacing'">
             <div class="modal-header">
                 <h2 class="modal-title">Binarnyj opcion</h2>
             </div>
@@ -17,13 +17,14 @@
                             <b-row>
                                 <b-col>
                                     <b-form-group label="Valjuta">
-                                        <b-form-select v-model="currency" :options="curoptions" class="mb-3"/>
+                                        <b-form-select v-model="userCurrency" class="mb-3">
+                                            <option v-for="currency in currencies" :value="currency.code">{{ currency.symbol + " " + currency.code }}</option>
+                                        </b-form-select>
                                     </b-form-group>
                                 </b-col>
                                 <b-col class="pl-0">
                                     <b-form-group label="Summa">
-                                        <b-form-input v-model="amount" type="text"
-                                                      placeholder="Vvedite summu"></b-form-input>
+                                        <b-form-input v-model="userAmount" type="text" placeholder="Vvedite summu"></b-form-input>
                                     </b-form-group>
                                 </b-col>
                             </b-row>
@@ -51,11 +52,11 @@
                     <b-col class="pl-0">
                         <h5 class="mb-3">Tekushie indexy</h5>
                         <b-list-group>
-                            <b-list-group-item>
+                            <b-list-group-item v-for="currency in currencies">
                                 <div class="d-inline-block"><i class="fas fa-dollar-sign text-size-2"></i></div>
                                 <div class="d-inline-block cur-block ml-2">
                                     <div>USD</div>
-                                    <div class="cursmall">Kurs:<span class="cur-usd">123</span></div>
+                                    <div class="cursmall">Kurs: <span class="cur-usd">{{ currency.rate }}</span></div>
                                 </div>
                             </b-list-group-item>
                             <b-list-group-item>
@@ -83,7 +84,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-labeled btn-success" :disabled="status !== 'accepted'"><span class="btn-label"><i class="fas fa-check"></i></span>Sdelat' stavku</button>
             </div>
-            <p>{{ origin | json }}</p>
             <div>
                 <!-- As a link -->
                 <b-navbar type="dark" variant="dark" toggleable class="dark-footer">
@@ -115,10 +115,14 @@
                 </b-navbar>
             </div>
         </div>
+
     </div>
 </template>
 
 <script>
+
+    var link = 'https://api.coindesk.com/v1/bpi/currentprice.json?t=123454';
+
     export default {
         name: 'btcform',
         props: {
@@ -126,36 +130,64 @@
         },
         data() {
             return {
-                origin: '',
+                origin: null,
+                currencies: null,
+                oldCurrencies: null,
+
                 status : 'not_accepted',
-                amount: '',
-                currency: null,
-                curoptions: [
-                    {value: null, text: 'Vyberite valjutu'},
-                    {value: 'USD', text: 'USD'},
-                    {value: 'EUR', text: 'EUR'},
-                    {value: 'RUB', text: 'RUB'}
-                ],
-                curdirection: 'first',
+                modal: 'bidPlacing',
+                userAmount: '',
+                userCurrency: '',
+                curdirection: 'goesup',
                 diroptions: [
-                    {text: '<i class="fas fa-arrow-up"></i> Vverh', value: 'first'},
-                    {text: '<i class="fas fa-arrow-down"></i> Vniz', value: 'second'}
+                    {text: '<i class="fas fa-arrow-up"></i> Vverh', value: 'goesup'},
+                    {text: '<i class="fas fa-arrow-down"></i> Vniz', value: 'goesdown'}
                 ]
             }
         },
-        ready: function() {
+        created: function() {
+            this.getResources();
+            this.refreshResources();
+        },
+        methods: {
+            setStatus: function(status) {
+                this.status = status;
+            },
+            getResources: function(){
+                this.$http.get(link).then(function(response){
+                    origin = response.data.bpi;
 
-            // GET request
-            this.$http.get('http://httpbin.org/ip', function (data) {
-                // set data on vm
-                this.$set('origin', data)
+                    // First fill with data
+                    if (this.currencies == null){
+                        this.currencies = origin;
+                    }
 
-            }).error(function (data, status, request) {
-                // handle error
-            })
+                    // Check if data on remote was changed
+                    if (origin[Object.keys(origin)[0]].rate != this.currencies[Object.keys(origin)[0]].rate){
+                        console.log("changed");
 
+                        this.oldCurrencies = this.currencies;
+                        this.currencies = origin;
+                    }
+                }, function(error){
+                    console.log(error.statusText);
+                });
+            },
+            refreshResources: function () {
+                setInterval(()=>{
+                    this.getResources()
+                },1000);
+            },
+            winCheck: function () {
+                setInterval(()=>{
+                    if (this.status === 'bid_accepted'){
+
+                    }
+                },1000);
+            }
         }
     }
+
 
 </script>
 
