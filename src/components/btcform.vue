@@ -40,7 +40,8 @@
 						<b-col>
 							<h5 class="my-3">Текущие индексы:</h5>
 							<b-list-group>
-								<b-list-group-item  v-for="currency in currencies">
+								<div  v-for="currency in currencies">
+								<b-list-group-item>
 									<div class="d-inline-block">
 										<span class="text-size-2 font-weight-bold" v-html="currency.symbol"></span>
 									</div>
@@ -49,6 +50,7 @@
 										<div class="cursmall">Курс: {{ currency.rate }}</div>
 									</div>
 								</b-list-group-item>
+								</div>
 							</b-list-group>
 							<div class="mt-3 text-right">
 								<p>По текущему курсу: <span class="font-weight-bold">{{ userBidAmount }}</span><i class="fab fa-btc ml-1"></i></p>
@@ -107,6 +109,7 @@
 		</div>
 
 	</div>
+
 </template>
 
 <script>
@@ -208,7 +211,7 @@
                 //console.log(dataOld[this.userCurrency].rate +' > '+ dataOld[this.userCurrency].rate, this.curDirection);
             },
             getBidAmount: function () {
-                var a = origin[this.userCurrency].rate;
+                var a = this.origin[this.userCurrency].rate;
                 a = a.replace(/\,/g, '');
                 a = (this.userAmount / Number(a)).toFixed(4);
                 this.userBidAmount = +a;
@@ -216,18 +219,18 @@
             },
             getResources: function () {
                 this.$http.get(this.link).then(function (response) {
-                    origin = response.data.bpi;
+                    this.origin = response.data.bpi;
                     this.getBidAmount();
                     // First fill with data
                     if (this.currencies == null) {
-                        this.currencies = origin;
+                        this.currencies = this.origin;
                     }
                     // Check if data on remote was changed
-                    if (origin[Object.keys(origin)[0]].rate != this.currencies[Object.keys(origin)[0]].rate) {
+                    if (this.origin[Object.keys(this.origin)[0]].rate != this.currencies[Object.keys(this.origin)[0]].rate) {
                         this.setDataStatus('changed');
-                        this.setCurDirection(this.currencies, origin);
+                        this.setCurDirection(this.currencies, this.origin);
                         this.oldCurrencies = this.currencies;
-                        this.currencies = origin;
+                        this.currencies = this.origin;
                     }
                 }, function (error) {
                     //console.log(error.statusText);
