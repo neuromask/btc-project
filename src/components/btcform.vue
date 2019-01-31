@@ -6,6 +6,7 @@
             <div class="modal-header">
                 <h2 class="modal-title">Binarnyj opcion</h2>
             </div>
+            <b-form @submit="onSubmit">
             <div class="modal-body">
                 <b-row class="text-left">
 
@@ -15,14 +16,14 @@
                             <b-row>
                                 <b-col>
                                     <b-form-group label="Valjuta">
-                                        <b-form-select v-model="userCurrency" @change="getCurrentRate()" class="mb-3">
-                                            <option v-for="currency in currencies" v-bind:value="currency.code" v-html="currency.symbol + ' ' + currency.code">}</option>
+                                        <b-form-select v-model="userCurrency"  @input="getBidAmount" class="mb-3" :disabled="bidStatus == 'bid_accepted'">
+                                            <option v-for="currency in currencies" v-bind:value="currency.code" v-html="currency.symbol + ' ' + currency.code">fds</option>
                                         </b-form-select>
                                     </b-form-group>
                                 </b-col>
                                 <b-col class="pl-0">
                                     <b-form-group label="Summa">
-                                        <b-form-input v-model="userAmount" type="text" placeholder="Vvedite summu"></b-form-input>
+                                        <b-form-input v-model="userAmount"  @input="getBidAmount" type="number" :disabled="bidStatus == 'bid_accepted'" placeholder="Vvedite summu"></b-form-input>
                                     </b-form-group>
                                 </b-col>
                             </b-row>
@@ -31,17 +32,19 @@
                                     <b-form-group label="Posle sledujushej smeny kotirovok kurk bitcoina pojdet:">
                                         <b-form-radio-group v-model="userDirection"
                                                             :options="dirOptions"
-                                                            name="radioInline">
+                                                            name="radioInline"
+                                                            :disabled="bidStatus == 'bid_accepted'">
                                         </b-form-radio-group>
                                     </b-form-group>
                                 </b-col>
                             </b-row>
                         </b-jumbotron>
                         <div class="mt-3">
-                            <b-form-checkbox id="checkbox1"
-                                             v-model="status"
+                            <b-form-checkbox id="userAccept"
+                                             v-model="userAccept"
                                              value="accepted"
-                                             unchecked-value="not_accepted">
+                                             unchecked-value="not_accepted"
+                                             :disabled="bidStatus == 'bid_accepted'">
                                 I accept the terms and use
                             </b-form-checkbox>
                         </div>
@@ -65,12 +68,13 @@
 
                 </b-row>
             </div>
-            <button type="button" @click="removeItem">Удалить</button>
+
             <div class="modal-footer">
-                <button type="button" class="btn btn-labeled btn-success" @click="winCheck()"><span
+                <button type="button" class="btn btn-labeled btn-success" @click="winCheck" :disabled="$v.$invalid"><span
                         class="btn-label"><i class="fas fa-check"></i></span>Sdelat' stavku
                 </button>
             </div>
+            </b-form>
             <footerBar></footerBar>
         </div>
         <div class="modal-content text-left" v-if="modal == 'bidWon'">
@@ -104,12 +108,15 @@
             <footerBar></footerBar>
         </div>
 
-
     </div>
 </template>
 
 <script>
     import footerBar from './footerBar.vue';
+    import { validationMixin } from "vuelidate"
+    import { required, numeric } from "vuelidate/lib/validators"
+    import { mapState, mapActions } from 'vuex'
+
     export default {
         name: 'btcform',
         components:{
@@ -121,7 +128,7 @@
                 currencies: null,
                 oldCurrencies: null,
                 link: 'https://api.coindesk.com/v1/bpi/currentprice.json?t=123454',
-                status: 'not_accepted',
+                userAccept: 'not_accepted',
                 currentRate: '',
                 bidStatus: 'bid_not_accepted',
                 dataStatus: 'not_changed',
@@ -134,25 +141,41 @@
                 dirOptions: [
                     {text: '<i class="fas fa-arrow-up"></i> Vverh', value: 'up'},
                     {text: '<i class="fas fa-arrow-down"></i> Vniz', value: 'down'}
-                ]
+                ],
+                form: {}
             }
         },
         created: function () {
             this.getResources();
             this.refreshResources();
         },
+        mixins: [
+            validationMixin
+        ],
+        validations: {
+            userAccept: {
+                async isUnique(value) {
+                    if (value == 'accepted') {
+                        return true
+                    }
+                }
+            },
+            userAmount: {
+                required,
+                numeric
+            }
+        },
+        computed: mapState({
+            balance: state => state.balance
+        }),
         methods: {
-            removeItem: function() {
-                // генерируем событие 'remove' и передаём id элемента
-                this.$emit('updateBalance', 'asd');
-                console.log('btn');
-            },
-            balanceUpdate: function() {
-                this.$emit('updateBalance', 2);
-                console.log('asd');
-            },
             setBidStatus: function (bidStatus) {
                 this.bidStatus = bidStatus;
+            },
+            compareBalanceAmount: function (bidStatus) {
+                if(this.userBidAmount > this.balance) {
+                    console.log('more');
+                }
             },
             setDataStatus: function (dataStatus) {
                 if (this.bidStatus === 'bid_accepted') {
@@ -170,10 +193,8 @@
             getBidAmount: function () {
                 var a = origin[this.userCurrency].rate;
                 a = a.replace(/\,/g,'');
-                a = parseInt(a,10);
-                a = this.userAmount/a;
-                a = a.toFixed(4);
-                this.userBidAmount = a;
+                a = (this.userAmount/Number(a)).toFixed(4);
+                this.userBidAmount = +a;
             },
             getResources: function () {
                 this.$http.get(this.link).then(function (response) {
@@ -197,7 +218,7 @@
             refreshResources: function () {
                 this.intervalID1 = setInterval(() => {
                     this.getResources();
-                    this.balanceUpdate();
+                    this.compareBalanceAmount();
                 }, 1000);
             },
             winCheck: function () {
@@ -209,11 +230,11 @@
                         if (this.userDirection == this.curDirection) {
                             this.bidDestroy();
                             this.modal = 'bidWon';
-                            this.balanceUpdate();
+                            this.$store.dispatch('changeBalance', this.userBidAmount)
                         } else {
                             this.bidDestroy();
                             this.modal = 'bidLose';
-                            this.balanceUpdate();
+                            this.$store.dispatch('changeBalance', this.userBidAmount)
                         }
                     }
                 }, 1000);
@@ -227,6 +248,9 @@
             bidRefresh() {
                 this.modal = 'bidPlacing';
                 this.refreshResources();
+            },
+            onSubmit() {
+                // form submit logic
             }
         }
     }
