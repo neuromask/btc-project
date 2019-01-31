@@ -40,8 +40,7 @@
 						<b-col>
 							<h5 class="my-3">Текущие индексы:</h5>
 							<b-list-group>
-								<div  v-for="currency in currencies">
-								<b-list-group-item>
+								<b-list-group-item v-for="currency in currencies">
 									<div class="d-inline-block">
 										<span class="text-size-2 font-weight-bold" v-html="currency.symbol"></span>
 									</div>
@@ -50,7 +49,6 @@
 										<div class="cursmall">Курс: {{ currency.rate }}</div>
 									</div>
 								</b-list-group-item>
-								</div>
 							</b-list-group>
 							<div class="mt-3 text-right">
 								<p>По текущему курсу: <span class="font-weight-bold">{{ userBidAmount }}</span><i class="fab fa-btc ml-1"></i></p>
